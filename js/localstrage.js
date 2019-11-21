@@ -11,39 +11,57 @@
   // Initialize Firebase
 	firebase.initializeApp(firebaseConfig);
 
-	var app = new Vue({
-	  //マウントする要素
-	  el:'#page',
+	var app = new Vue({
+		//マウントする要素
+		el: '#page',
 
-	  //アプリケーションで使用するデータ
-	  data: {
-	    todo:[],
-	    newItemName : '',
-	    newItemPrice: '',
-	    newItemMessage: ''
-	  },
+		//アプリケーションで使用するデータ
+		data: {
+			todo: [],
+			taskName: '',
+			taskOwner: '',
+			taskCount: 0
+		},
 
-	  // 算出プロパティ
-	  computed: {
-	  },
+		// 算出プロパティ
+		computed: {},
 
-	  // ライフサイクルフック
-	  created: function(){
-	  },
+		// ライフサイクルフック
+		beforeMount() {
+			// firebaseの受信処理
+			firebase.database().ref('task/incomplete/').on('child_added', (snapshot) => {
+				this.todo.push(snapshot.val())
+			})
 
-	  // アプリケーションで使用するメソッド
-	  methods: {
-	    doAdd: function(){
-	      this.todo.push({
-	        name:this.newItemName,
-	        price:this.newItemPrice,
-	        message:this.newItemMessage,
-	      })
-	      this.newItemName = '',
-	      this.newItemPrice = '',
-	      this.newItemMessage = ''
-	    },
+			firebase.database().ref('taskCount/').on('child_added', (snapshot) => {
+				this.taskCount = snapshot.val()
+				console.log(this)
+			})
+		},
 
-	  }
+
+		// アプリケーションで使用するメソッド
+		methods: {
+			doAdd() {
+				this.send()
+				this.clearInput()
+			},
+
+			send() {
+				firebase.database().ref('task/incomplete/').push({
+					taskName: this.taskName,
+					taskOwner: this.taskOwner,
+					taskCount: this.taskCount
+				})
+				firebase.database().ref('taskCount/').set({
+					count: this.taskCount + 1
+				})
+			},
+			clearInput() {
+				this.taskName = ''
+				this.taskOwner = ''
+			}
+
+		}
 
 	})
